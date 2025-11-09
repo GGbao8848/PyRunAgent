@@ -1,0 +1,40 @@
+# 忽略测试脚本文件夹
+script_test/
+
+# Python缓存文件
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE文件
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 环境配置
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 日志文件
+*.log
+logs/
+
+# 虚拟环境
+venv/
+env/
+.venv/
+
+# 构建输出
+build/
+dist/
+*.egg-info/

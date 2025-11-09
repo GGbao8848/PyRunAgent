@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <title>PyRunAgent Web</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>🧩 PyRunAgent - Python脚本运行代理工具箱</h1>
+
+    <div class="block">
+      <label>Python 环境路径：</label>
+      <input id="python_path" type="text" placeholder="/path/to/conda/env/bin/python">
+    </div>
+
+    <div class="block">
+      <label>脚本目录：</label>
+      <input id="dir_input" type="text" placeholder="/path/to/scripts">
+      <button onclick="scan()">扫描</button>
+    </div>
+
+    <div class="block">
+      <label>脚本列表：</label>
+      <select id="script_list" onchange="loadArgs()"></select>
+    </div>
+
+    <div class="block">
+      <label>参数：</label>
+      <textarea id="args_input" placeholder="例如: --input ./data --epochs 10"></textarea>
+      <button onclick="run()">运行</button>
+    </div>
+
+    <div class="block">
+      <label>输出：</label>
+      <pre id="output"></pre>
+    </div>
+  </div>
+
+  <script>
+    async function scan() {
+      const dir = document.getElementById("dir_input").value;
+      const res = await fetch("/scan", {
+        method: "POST",
+        body: new URLSearchParams({ dir }),
+      });
+      const data = await res.json();
+      const list = document.getElementById("script_list");
+      list.innerHTML = "";
+      (data.scripts || []).forEach(s => {
+        const opt = document.createElement("option");
+        opt.value = s.path;
+        opt.textContent = s.name;
+        list.appendChild(opt);
+      });
+    }
+
+    async function loadArgs() {
+      const path = document.getElementById("script_list").value;
+      const res = await fetch("/args", {
+        method: "POST",
+        body: new URLSearchParams({ path }),
+      });
+      const data = await res.json();
+      const textarea = document.getElementById("args_input");
+      if (data.args.length === 0) textarea.value = "# 无参数";
+      else textarea.value = data.args.map(a => `${a.name} - ${a.help}`).join("\n");
+    }
+
+    function run() {
+      const python_path = document.getElementById("python_path").value;
+      const script_path = document.getElementById("script_list").value;
+      const args_str = document.getElementById("args_input").value.trim();
+      const output = document.getElementById("output");
+      output.textContent = "";
+
+      const ws = new WebSocket(`ws://${window.location.host}/ws/run`);
+      ws.onopen = () => {
+        ws.send(JSON.stringify({
+          python_path,
+          script_path,
+          args: args_str.split(" ").filter(x => x)
+        }));
+      };
+      ws.onmessage = (e) => {
+        output.textContent += e.data + "\n";
+        output.scrollTop = output.scrollHeight;
+      };
+    }
+  </script>
+</body>
+</html>
